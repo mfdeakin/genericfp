@@ -1,0 +1,4 @@
+Generic FP is a generalized implementation of the IEEE 754 floating point standard specified here: http://ieeexplore.ieee.org/xpl/mostRecentIssue.jsp?reload=true&punumber=2355
+This uses templates to generalize the number of bits used for the mantissa and exponent in a way that is compatible with the single and double precisions in IEEE 754.
+Conversion involving truncation is done with the specified rounding mode.
+Conversion without truncation is done exactly.
