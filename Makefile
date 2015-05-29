@@ -1,8 +1,6 @@
 
-genfptest: test.o genericfp.o
-	g++ -o genfptest test.o genericfp.o -lgtest
-
-genericfp.o: genericfp.cpp genericfp.hpp
+genfptest: test.o
+	g++ -o genfptest test.o -lgtest
 
 test.o: test.cpp genericfp.hpp
 
