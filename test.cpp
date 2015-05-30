@@ -1,6 +1,7 @@
 
 #include <stdio.h>
 #include <gtest/gtest.h>
+#include <fenv.h>
 #include <math.h>
 #include <time.h>
 #include "genericfp.hpp"
@@ -113,6 +114,66 @@ TEST(FPGetBitTest, GetBitTest)
       compare >>= 1;
     }
   }
+}
+
+TEST(compilertest, compilersetbitfield)
+{
+	fp32 test;
+	test.exponent = 0;
+	test.sign = 0;
+	test.mantissa = 0;
+	test.mantissa = ~test.mantissa;
+	ASSERT_EQ(0, test.exponent);
+	ASSERT_EQ(0, test.sign);
+	for(int i = 0; i < test.pBits; i++) {
+		ASSERT_EQ(1, gfGetMantissaBit<fp32>(test, i));
+	}
+	test.mantissa = 0;
+	test.exponent = ~test.exponent;
+	ASSERT_EQ(0, test.mantissa);
+	ASSERT_EQ(0, test.sign);
+	for(int i = 0; i < test.eBits; i++) {
+		ASSERT_EQ(1, gfGetExponentBit<fp32>(test, i));
+	}
+}
+
+TEST(FPRoundTest, RoundNearestTest)
+{
+	fesetround(FE_TONEAREST);
+	double testValues[] = {1.0,
+												 /* Test of 1+2^-23;
+													* should be exact rounding */
+												 1.00000011920928955078125,
+												 /* Test of 1+2^-24;
+													* should be 1.0 */
+												 1.000000059604644775390625,
+												 /* Test of 1+(2+1)*2^-24;
+													* should be 1+2^-23 */
+												 1.000000178813934326171875,
+												 /* Test of 1+(2+1)*2^-25;
+													* should be 1+2^-23 */
+												 1.0000000894069671630859375,
+												 /* Test of 1+(2-1)*2^-25;
+													* should be 1.0 */
+												 1.0000000298023223876953125,
+	};
+	const unsigned numTests = sizeof(testValues) /
+		sizeof(testValues[0]);
+	for(unsigned i = 0; i < numTests; i++) {
+		union {
+			fp64 s;
+			double f;
+		} exact;
+		exact.f = testValues[i];
+		float correct = (float)exact.f;
+		
+		union {
+			fp32 s;
+			float f;
+		} rounded;
+		rounded.s = gfRoundNearest<fp32, fp64>(exact.s);
+		EXPECT_EQ(correct, rounded.f);
+	}
 }
 
 int main(int argc, char **argv)
