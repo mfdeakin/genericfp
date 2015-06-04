@@ -1,4 +1,7 @@
 
+CFLAGS=-g
+CXXFLAGS=$(CFLAGS)
+
 genfptest: test.o
 	g++ -o genfptest test.o -lgtest
 

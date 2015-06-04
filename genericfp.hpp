@@ -19,8 +19,8 @@ const unsigned gf32ExpBits = 8;
 const unsigned gf32ManBits = 23;
 const unsigned gf43ExpBits = 11;
 const unsigned gf43ManBits = 31;
-const unsigned gf64ExpBits = 10;
-const unsigned gf64ManBits = 53;
+const unsigned gf64ExpBits = 11;
+const unsigned gf64ManBits = 52;
 const unsigned gf79ExpBits = 15;
 const unsigned gf79ManBits = 63;
 
@@ -44,6 +44,11 @@ template <typename T>
 bool getExponentBit(T f, unsigned bitPos);
 template <typename TDest, typename TSrc>
 TDest gfRound(TSrc f);
+
+template <typename T>
+float gfFloat(T orig);
+template <typename T>
+double gfDouble(T orig);
 
 template <typename T>
 bool gfExpAllSet(T f)
@@ -97,8 +102,6 @@ TDest gfRoundNearest(TSrc src)
 	unsigned long srcCenter = (1 << src.eBits - 1) - 1;
 	unsigned long destCenter = (1 << dest.eBits - 1) - 1;
 	unsigned long centerDiff = srcCenter - destCenter;
-	printf("%x * 2^%x, %x, %x\n",
-				 src.mantissa, src.exponent, centerDiff, srcCenter);
 	if(dest.eBits < src.eBits &&
 		 src.exponent - centerDiff >= destCenter + 1) {
 		/* Round it to infinity */
@@ -106,17 +109,21 @@ TDest gfRoundNearest(TSrc src)
 	}
 	else {
 		/* Plausibly not going to infinity :) */
-		dest.exponent = src.exponent;
+		dest.exponent = src.exponent - centerDiff;
 		if(dest.pBits >= src.pBits) {
 			/* And we are done */
 			dest.mantissa = src.mantissa;
 		}
 		else {
 			unsigned roundingBit = src.pBits - dest.pBits;
-			dest.mantissa = src.mantissa >> roundingBit;
+      unsigned long buffer = src.mantissa;
+			dest.mantissa = buffer >> roundingBit;
 			unsigned long truncated;
 			truncated = src.mantissa &
 				((1 << roundingBit) - 1);
+      printf("%lx->%lx vs %lx with %lx\n",
+             (unsigned long)src.mantissa, (unsigned long)dest.mantissa,
+             buffer >> roundingBit, buffer);
 			/* Check the first truncated bit to see if we
 			 * need to consider rounding up */
 			if(truncated & (1 << (roundingBit - 1)) > 0) {

@@ -135,6 +135,15 @@ TEST(compilertest, compilersetbitfield)
 	for(int i = 0; i < test.eBits; i++) {
 		ASSERT_EQ(1, gfGetExponentBit<fp32>(test, i));
 	}
+  
+  union {
+    fp64 s;
+    double f;
+  } dbltest;
+  dbltest.f = 1.0;
+  ASSERT_EQ(0, dbltest.s.mantissa);
+  ASSERT_EQ(0x3ff, dbltest.s.exponent);
+  ASSERT_EQ(0, dbltest.s.sign);
 }
 
 TEST(FPRoundTest, RoundNearestTest)
@@ -172,6 +181,14 @@ TEST(FPRoundTest, RoundNearestTest)
 			float f;
 		} rounded;
 		rounded.s = gfRoundNearest<fp32, fp64>(exact.s);
+    union {
+      fp32 s;
+      float f;
+    } expTest;
+    expTest.f = correct;
+    printf("%f->%f: %lx->%lx vs. %lx\n",
+           exact.f, expTest.f,
+           exact.s.mantissa, expTest.s.mantissa, rounded.s.mantissa);
 		EXPECT_EQ(correct, rounded.f);
 	}
 }
