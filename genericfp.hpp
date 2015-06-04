@@ -118,15 +118,11 @@ TDest gfRoundNearest(TSrc src)
 			unsigned roundingBit = src.pBits - dest.pBits;
       unsigned long buffer = src.mantissa;
 			dest.mantissa = buffer >> roundingBit;
-			unsigned long truncated;
-			truncated = src.mantissa &
+			unsigned long truncated = src.mantissa &
 				((1 << roundingBit) - 1);
-      printf("%lx->%lx vs %lx with %lx\n",
-             (unsigned long)src.mantissa, (unsigned long)dest.mantissa,
-             buffer >> roundingBit, buffer);
 			/* Check the first truncated bit to see if we
 			 * need to consider rounding up */
-			if(truncated & (1 << (roundingBit - 1)) > 0) {
+			if((truncated & (1 << (roundingBit - 1))) > 0) {
 				unsigned long trailing;
 				trailing = truncated &
 					((1 << (roundingBit - 1)) - 1);
@@ -134,7 +130,7 @@ TDest gfRoundNearest(TSrc src)
 				 * it is zero whatever direction makes the
 				 * 0'th bit of the mantissa 0 */
 				if(trailing > 0 ||
-					 (trailing == 0 && dest.mantissa & 1 == 1)) {
+					 ((dest.mantissa & 1) == 1)) {
 					/* Round up. */
 					dest.mantissa++;
 					if(dest.mantissa == 0) {

@@ -186,9 +186,6 @@ TEST(FPRoundTest, RoundNearestTest)
       float f;
     } expTest;
     expTest.f = correct;
-    printf("%f->%f: %lx->%lx vs. %lx\n",
-           exact.f, expTest.f,
-           exact.s.mantissa, expTest.s.mantissa, rounded.s.mantissa);
 		EXPECT_EQ(correct, rounded.f);
 	}
 }
