@@ -148,46 +148,71 @@ TEST(compilertest, compilersetbitfield)
 
 TEST(FPRoundTest, RoundNearestTest)
 {
-	fesetround(FE_TONEAREST);
-	double testValues[] = {1.0,
-												 /* Test of 1+2^-23;
-													* should be exact rounding */
-												 1.00000011920928955078125,
-												 /* Test of 1+2^-24;
-													* should be 1.0 */
-												 1.000000059604644775390625,
-												 /* Test of 1+(2+1)*2^-24;
-													* should be 1+2^-23 */
-												 1.000000178813934326171875,
-												 /* Test of 1+(2+1)*2^-25;
-													* should be 1+2^-23 */
-												 1.0000000894069671630859375,
-												 /* Test of 1+(2-1)*2^-25;
-													* should be 1.0 */
-												 1.0000000298023223876953125,
-	};
-	const unsigned numTests = sizeof(testValues) /
-		sizeof(testValues[0]);
-	for(unsigned i = 0; i < numTests; i++) {
-		union {
-			fp64 s;
-			double f;
-		} exact;
-		exact.f = testValues[i];
-		float correct = (float)exact.f;
+  fesetround(FE_TONEAREST);
+  double testValues[] = {1.0,
+                         0.0,
+                         /* Test of 1+2^-23;
+                          * should be exact rounding */
+                         1.00000011920928955078125,
+                         /* Test of 1+2^-24;
+                          * should be 1.0 */
+                         1.000000059604644775390625,
+                         /* Test of 1+(2+1)*2^-24;
+                          * should be 1+2^-23 */
+                         1.000000178813934326171875,
+                         /* Test of 1+(2+1)*2^-25;
+                          * should be 1+2^-23 */
+                         1.0000000894069671630859375,
+                         /* Test of 1+(2-1)*2^-25;
+                          * should be 1.0 */
+                         1.0000000298023223876953125,
+                         /* Test of 1*2^128;
+                          * should be inf */
+                         340282366920938463463374607431768211456.0,
+                         /* Test of 0x800001*2^-23*2^-127;
+                          * should be exact */
+                         5.87747245476066970225221814797602003405139342399141e-39,
+                         /* Test of 0x800001*2^-23*2^-128;
+                          * should be exact */
+                         2.93873622738033485112610907398801001702569671199570e-39,
+                         /* Test of 0x800001*2^-23*2^-129;
+                          * should be exact */
+                         1.46936811369016742556305453699400500851284835599785e-39,
+                         /* Test of 1*2^-23*2^-126;
+                          * should be exact */
+                         1.40129846432481707092372958328991613128026194187652e-45,
+                         /* Test of 1*2^-23*2^-127;
+                          * should be 0 */
+                         7.00649232162408535461864791644958065640130970938258e-46
+  };
+  const unsigned numTests = sizeof(testValues) /
+    sizeof(testValues[0]);
+  for(unsigned i = 0; i < numTests; i++) {
+    union {
+      fp64 s;
+      double f;
+    } exact;
+    exact.f = testValues[i];
 		
-		union {
-			fp32 s;
-			float f;
-		} rounded;
-		rounded.s = gfRoundNearest<fp32, fp64>(exact.s);
+    union {
+      fp32 s;
+      float f;
+    } rounded;
+    rounded.s = gfRoundNearest<fp32, fp64>(exact.s);
     union {
       fp32 s;
       float f;
     } expTest;
-    expTest.f = correct;
-		EXPECT_EQ(correct, rounded.f);
-	}
+    expTest.f = (float)exact.f;
+    printf("%e\n", (double)expTest.f);
+    EXPECT_EQ(expTest.f, rounded.f) <<
+      "ACTUAL Exp: " << rounded.s.exponent <<
+      " Sign: " << rounded.s.sign <<
+      " Mantissa: " << rounded.s.mantissa <<
+      " EXPECTED Exp: " << expTest.s.exponent <<
+      " Sign: " << expTest.s.sign <<
+      " Mantissa: " << expTest.s.mantissa << "\n";
+  }
 }
 
 int main(int argc, char **argv)

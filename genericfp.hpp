@@ -95,52 +95,63 @@ template <typename TDest, typename TSrc>
 TDest gfRoundNearest(TSrc src)
 {
   TDest dest;
-	dest.sign = src.sign;
-	dest.mantissa = 0;
-	dest.exponent = 0;
-	/* Compute the exponents corresponding to 1.0 */
-	unsigned long srcCenter = (1 << src.eBits - 1) - 1;
-	unsigned long destCenter = (1 << dest.eBits - 1) - 1;
-	unsigned long centerDiff = srcCenter - destCenter;
-	if(dest.eBits < src.eBits &&
-		 src.exponent - centerDiff >= destCenter + 1) {
-		/* Round it to infinity */
-		dest.exponent = ~dest.exponent;
-	}
-	else {
-		/* Plausibly not going to infinity :) */
-		dest.exponent = src.exponent - centerDiff;
-		if(dest.pBits >= src.pBits) {
-			/* And we are done */
-			dest.mantissa = src.mantissa;
-		}
-		else {
-			unsigned roundingBit = src.pBits - dest.pBits;
-      unsigned long buffer = src.mantissa;
-			dest.mantissa = buffer >> roundingBit;
-			unsigned long truncated = src.mantissa &
-				((1 << roundingBit) - 1);
-			/* Check the first truncated bit to see if we
-			 * need to consider rounding up */
-			if((truncated & (1 << (roundingBit - 1))) > 0) {
-				unsigned long trailing;
-				trailing = truncated &
-					((1 << (roundingBit - 1)) - 1);
-				/* Round up if trailing is nonzero or if
-				 * it is zero whatever direction makes the
-				 * 0'th bit of the mantissa 0 */
-				if(trailing > 0 ||
-					 ((dest.mantissa & 1) == 1)) {
-					/* Round up. */
-					dest.mantissa++;
-					if(dest.mantissa == 0) {
-						dest.exponent++;
-					}
-				}
-			}
-		}
-	}
-	return dest;
+  dest.sign = src.sign;
+  dest.mantissa = 0;
+  dest.exponent = 0;
+  /* Compute the exponents corresponding to 1.0 */
+  unsigned long srcCenter = (1 << src.eBits - 1) - 1;
+  unsigned long destCenter = (1 << dest.eBits - 1) - 1;
+  unsigned long centerDiff = srcCenter - destCenter;
+  if(dest.eBits < src.eBits &&
+     src.exponent >= 2 * destCenter + centerDiff) {
+    /* Round it to infinity */
+    dest.exponent = ~dest.exponent;
+  }
+  /* Verify it doesn't need to be denormalized */
+  else if(dest.eBits < src.eBits &&
+          src.exponent <= centerDiff) {
+    unsigned long numShifts = centerDiff - src.exponent;
+    if(numShifts < 8 * dest.pBits) {
+      /* Translate the mantissa to a denormalized number */
+      dest.mantissa = src.mantissa >> 1;
+      dest.mantissa |= 1 << dest.pBits - 1;
+      dest.mantissa >>= numShifts;
+    }
+    /* Otherwise it's just 0 */
+  }
+  else {
+    /* Plausibly not going to infinity :) */
+    dest.exponent = src.exponent - centerDiff;
+    if(dest.pBits >= src.pBits) {
+      /* And we are done */
+      dest.mantissa = src.mantissa;
+    }
+    else {
+      unsigned roundingBit = src.pBits - dest.pBits;
+      dest.mantissa = src.mantissa >> roundingBit;
+      unsigned long truncated = src.mantissa &
+        ((1 << roundingBit) - 1);
+      /* Check the first truncated bit to see if we
+       * need to consider rounding up */
+      if((truncated & (1 << roundingBit - 1)) > 0) {
+        unsigned long trailing;
+        trailing = truncated &
+          ((1 << (roundingBit - 1)) - 1);
+        /* Round up if trailing is nonzero or if
+         * it is zero whatever direction makes the
+         * 0'th bit of the mantissa 0 */
+        if(trailing > 0 ||
+           ((dest.mantissa & 1) == 1)) {
+          /* Round up. */
+          dest.mantissa++;
+          if(dest.mantissa == 0) {
+            dest.exponent++;
+          }
+        }
+      }
+    }
+  }
+  return dest;
 }
 
 #endif
