@@ -1,5 +1,5 @@
 
-CFLAGS=-g
+CFLAGS=-g -std=c++11
 CXXFLAGS=$(CFLAGS)
 
 genfptest: test.o
